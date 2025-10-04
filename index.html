@@ -1,323 +1,166 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Progresso em Foco</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/feather-icons"></script>
-<style>
-.progress-bar { transition: width 0.5s ease-in-out; }
-.notification { animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
-@keyframes slideIn { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progresso em Foco</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-100 text-gray-900 min-h-screen flex flex-col">
 
-<!-- Notificação -->
-<div id="notification" class="notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
-  <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
-    <i data-feather="alert-circle" class="mr-2"></i>
-    <span id="notification-message"></span>
-  </div>
-</div>
-
-<!-- Modal Configurações (cores + login admin) -->
-<div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
-    <div class="flex justify-between items-center mb-6 border-b pb-4">
-      <h3 class="text-2xl font-bold text-gray-800">Configurações</h3>
-      <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700">
-        <i data-feather="x" class="w-6 h-6"></i>
-      </button>
-    </div>
-
-    <div class="space-y-6">
-      <!-- Cores -->
-      <div>
-        <h4 class="font-semibold mb-2">Tema do Sistema</h4>
-        <div class="flex gap-3 mb-4">
-          <button onclick="changeThemeColor('blue','#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
-          <button onclick="changeThemeColor('green','#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
-          <button onclick="changeThemeColor('yellow','#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
-          <button onclick="changeThemeColor('red','#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
-          <button onclick="changeThemeColor('purple','#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
-        </div>
-
-        <h4 class="font-semibold mb-2">Cor das Barras</h4>
-        <div class="flex gap-3">
-          <button onclick="changeBarColor('#3B82F6')" class="w-10 h-10 rounded-lg bg-blue-500"></button>
-          <button onclick="changeBarColor('#10B981')" class="w-10 h-10 rounded-lg bg-green-500"></button>
-          <button onclick="changeBarColor('#F59E0B')" class="w-10 h-10 rounded-lg bg-yellow-500"></button>
-          <button onclick="changeBarColor('#EF4444')" class="w-10 h-10 rounded-lg bg-red-500"></button>
-          <button onclick="changeBarColor('#8B5CF6')" class="w-10 h-10 rounded-lg bg-purple-500"></button>
-        </div>
-      </div>
-
-      <!-- Login Admin (abaixo das cores) -->
-      <div class="pt-4 border-t">
-        <h4 class="font-semibold mb-2">Login do Administrador</h4>
-        <div class="mb-3">
-          <input id="adminUsername" type="text" placeholder="Usuário" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div class="mb-3">
-          <input id="adminPassword" type="password" placeholder="Senha" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-        </div>
-        <button onclick="loginAdmin()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Entrar como Administrador</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Administração (painel) -->
-<div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-lg overflow-auto max-h-[90vh]">
-    <div class="flex justify-between items-center mb-6">
-      <h3 class="text-2xl font-bold">Painel de Administração</h3>
-      <div class="flex gap-2">
-        <button onclick="closeAdminModal()" class="text-gray-500 hover:text-gray-700">
-          <i data-feather="x" class="w-6 h-6"></i>
-        </button>
-      </div>
-    </div>
-
-    <div class="space-y-4">
-      <h4 class="font-semibold text-lg">Gerenciar Metas</h4>
-      <div id="adminBarsList" class="space-y-2"></div>
-
-      <h4 class="font-semibold text-lg mt-4">Mensagem Global</h4>
-      <input id="globalMessageInput" type="text" placeholder="Mensagem para todos os membros" class="w-full px-3 py-2 border rounded-lg">
-      <div class="flex gap-2 mt-2">
-        <button onclick="sendGlobalMessage()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Enviar</button>
-        <button onclick="clearAllProofs()" class="bg-gray-200 px-3 py-2 rounded hover:bg-gray-300">Limpar provas (admin)</button>
-      </div>
-
-      <h4 class="font-semibold text-lg mt-4">Administradores</h4>
-      <div class="space-y-2">
-        <div id="adminList"></div>
-        <div class="flex gap-2">
-          <input id="newAdminUser" placeholder="Novo usuário" class="px-3 py-2 border rounded flex-1">
-          <input id="newAdminPass" placeholder="Senha" class="px-3 py-2 border rounded w-36">
-          <button onclick="createAdmin()" class="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600">Criar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Mensagem Global (visível para todos quando enviada) -->
-<div id="globalMessageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 relative">
-    <div class="absolute top-4 right-4">
-      <button onclick="closeGlobalMessage()" class="text-gray-500 hover:text-gray-700">
-        <i data-feather="x" class="w-6 h-6"></i>
-      </button>
-    </div>
-    <div class="flex flex-col items-center text-center">
-      <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
-        <i data-feather="alert-triangle" class="text-yellow-500 w-8 h-8"></i>
-      </div>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">Mensagem da Moderação</h3>
-      <p id="globalMessageText" class="text-gray-600 mb-6"></p>
-      <button onclick="closeGlobalMessage()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Entendi</button>
-    </div>
-  </div>
-</div>
-
-<!-- Header / Conteúdo -->
-<div class="container mx-auto px-4 py-8">
-  <header class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl font-bold text-blue-500">Progresso em Foco</h1>
+  <!-- Header -->
+  <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow">
+    <h1 class="text-2xl font-bold">Progresso em Foco</h1>
     <div class="flex space-x-4">
-      <button onclick="openSettingsModal()" class="p-2 rounded-full hover:bg-gray-200"><i data-feather="settings"></i></button>
-      <button id="adminBtn" class="p-2 rounded-full hover:bg-gray-200 hidden" onclick="openAdminModal()"><i data-feather="shield"></i></button>
+      <button id="settingsBtn"><i data-feather="settings"></i></button>
+      <button id="adminBtn" class="hidden"><i data-feather="shield"></i></button>
     </div>
   </header>
 
-  <!-- Adicionar Meta -->
-  <div class="bg-white rounded-lg shadow p-6 mb-8">
-    <h2 class="text-xl font-semibold mb-4">Adicionar Nova Meta</h2>
-    <div class="flex gap-4">
-      <input id="newBarName" type="text" placeholder="Nome da Meta" class="border rounded p-2 flex-1">
-      <button id="addBarBtn" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Adicionar</button>
+  <!-- Login Admin -->
+  <section class="p-4">
+    <h2 class="text-lg font-bold mb-2">Login Administrador</h2>
+    <input id="adminUsername" type="text" placeholder="Usuário" class="border p-2 rounded w-full mb-2">
+    <input id="adminPassword" type="password" placeholder="Senha" class="border p-2 rounded w-full mb-2">
+    <button onclick="loginAdmin()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Entrar como Admin</button>
+  </section>
+
+  <!-- Placar Geral -->
+  <section class="p-4">
+    <h2 class="text-xl font-bold mb-2">🏆 Placar Geral</h2>
+    <ul id="leaderboard" class="bg-white p-4 rounded shadow space-y-2"></ul>
+  </section>
+
+  <!-- Formulário de Nova Meta -->
+  <section class="p-4">
+    <h2 class="text-lg font-bold mb-2">Adicionar Meta</h2>
+    <input id="memberName" type="text" placeholder="Seu nome" class="border p-2 rounded w-full mb-2">
+    <input id="goalName" type="text" placeholder="Nome da meta" class="border p-2 rounded w-full mb-2">
+    <button id="addGoalBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Adicionar</button>
+  </section>
+
+  <!-- Metas -->
+  <section id="goalsSection" class="p-4 space-y-4"></section>
+
+  <!-- Mensagem Global -->
+  <div id="globalMessage" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded shadow text-center w-96">
+      <h2 class="text-xl font-bold mb-4">Mensagem da Moderação</h2>
+      <p id="globalMessageText" class="mb-4"></p>
+      <button onclick="closeGlobalMessage()" class="bg-red-600 text-white px-4 py-2 rounded">Fechar</button>
     </div>
   </div>
 
-  <!-- Placar Geral -->
-  <div class="bg-white rounded-lg shadow p-6 mb-8">
-    <h2 class="text-xl font-semibold mb-4">Placar Geral</h2>
-    <div id="leaderboard" class="space-y-2"></div>
+  <!-- Configurações do Membro -->
+  <div id="memberSettings" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded shadow w-96">
+      <h2 class="text-lg font-bold mb-4">Configurações do Membro</h2>
+      <label class="block mb-2">Cor do site</label>
+      <input id="memberSiteColor" type="color" class="mb-4 w-full">
+      <label class="block mb-2">Cor das barras</label>
+      <input id="memberBarColor" type="color" class="mb-4 w-full">
+      <label class="block mb-2">Plano de fundo</label>
+      <input id="memberBackground" type="file" accept="image/*" class="mb-4 w-full">
+      <button onclick="saveMemberSettings()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Salvar</button>
+      <button onclick="toggleMemberSettings()" class="mt-2 bg-red-600 text-white px-4 py-2 rounded w-full">Fechar</button>
+    </div>
   </div>
 
-  <!-- Barras -->
-  <div id="barsContainer" class="space-y-6"></div>
-</div>
+  <!-- Área Administrativa -->
+  <div id="adminPanel" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded shadow w-96 max-h-[90vh] overflow-y-auto relative">
+      <h2 class="text-lg font-bold mb-4">Área Administrativa</h2>
+      <button onclick="toggleAdminPanel()" class="absolute top-4 right-4 text-red-600 font-bold">X</button>
 
-<script>
-feather.replace();
-
-// --- Estado + credenciais iniciais
-let bars = JSON.parse(localStorage.getItem('progressBars')) || [];
-let admins = JSON.parse(localStorage.getItem('admins')) || [{username:'admin', password:'123456'}];
-let barColor = localStorage.getItem('barColor') || '#3B82F6';
-let isAdmin = false;
-
-// ---------- Helpers ----------
-function showNotification(msg){
-  const el = document.getElementById('notification');
-  document.getElementById('notification-message').textContent = msg;
-  el.classList.remove('hidden');
-  setTimeout(()=>el.classList.add('hidden'), 2500);
-}
-function saveBars(){ localStorage.setItem('progressBars', JSON.stringify(bars)); }
-function saveAdmins(){ localStorage.setItem('admins', JSON.stringify(admins)); }
-
-// ---------- Settings modal ----------
-function openSettingsModal(){ document.getElementById('settingsModal').classList.remove('hidden'); }
-function closeSettingsModal(){ document.getElementById('settingsModal').classList.add('hidden'); }
-
-// change color functions
-function changeThemeColor(name,hex){ document.documentElement.style.setProperty('--color-primary', hex); showNotification('Tema alterado'); }
-function changeBarColor(hex){ barColor = hex; localStorage.setItem('barColor', hex); renderBars(); showNotification('Cor da barra alterada'); }
-
-// ---------- Admin login ----------
-function loginAdmin(){
-  const user = document.getElementById('adminUsername').value.trim();
-  const pass = document.getElementById('adminPassword').value.trim();
-  if(!user || !pass){ alert('Preencha usuário e senha'); return; }
-
-  // Credencial padrão válida
-  if(user === 'admin' && pass === '123456'){
-    isAdmin = true;
-    document.getElementById('adminBtn').classList.remove('hidden');
-    closeSettingsModal();
-    showNotification('Login de administrador realizado!');
-    renderAdminList();
-    return;
-  }
-
-  // Verifica credenciais criadas no painel
-  const found = admins.find(a => a.username === user && a.password === pass);
-  if(found){
-    isAdmin = true;
-    document.getElementById('adminBtn').classList.remove('hidden');
-    closeSettingsModal();
-    showNotification('Login de administrador realizado!');
-    renderAdminList();
-  } else {
-    alert('Usuário ou senha incorretos.');
-  }
-}
-
-// allow creating new admin from admin panel
-function createAdmin(){
-  const u = document.getElementById('newAdminUser').value.trim();
-  const p = document.getElementById('newAdminPass').value.trim();
-  if(!u || !p){ alert('Preencha usuário e senha'); return; }
-  admins.push({username:u, password:p});
-  saveAdmins();
-  document.getElementById('newAdminUser').value=''; document.getElementById('newAdminPass').value='';
-  renderAdminList();
-  showNotification('Administrador criado');
-}
-
-function renderAdminList(){
-  const el = document.getElementById('adminList');
-  if(!el) return;
-  el.innerHTML = admins.map(a => `<div class="flex justify-between items-center p-2 bg-gray-50 rounded"><span class="font-mono">${a.username}</span></div>`).join('');
-}
-
-// ---------- Admin modal control ----------
-function openAdminModal(){
-  if(!isAdmin){ alert('Somente administradores podem acessar!'); return; }
-  document.getElementById('adminModal').classList.remove('hidden');
-  renderAdminBars();
-  renderAdminList();
-}
-function closeAdminModal(){ document.getElementById('adminModal').classList.add('hidden'); }
-
-// admin actions
-function renderAdminBars(){
-  const container = document.getElementById('adminBarsList');
-  container.innerHTML = '';
-  bars.forEach((b, i) => {
-    const div = document.createElement('div');
-    div.className = 'flex justify-between items-center p-2 bg-gray-50 rounded';
-    div.innerHTML = `
-      <div>
-        <strong>${b.name}</strong><div class="text-sm text-gray-600">${b.member || 'Membro'}</div>
+      <div class="mb-4">
+        <h3 class="font-bold">Mensagem Global</h3>
+        <textarea id="adminMessage" class="border w-full p-2 rounded mb-2"></textarea>
+        <button onclick="sendGlobalMessage()" class="bg-blue-600 text-white px-4 py-2 rounded">Enviar</button>
       </div>
-      <div class="flex gap-2">
-        <button onclick="adminDeleteBar(${i})" class="text-red-500 hover:underline">Excluir</button>
-        <button onclick="adminAdjustProgress(${i})" class="text-blue-500 hover:underline">Ajustar progresso</button>
+
+      <div class="mb-4">
+        <h3 class="font-bold">Configurações do Site</h3>
+        <label>Cor principal</label>
+        <input id="adminSiteColor" type="color" class="mb-2 w-full">
+        <label>Cor dos botões</label>
+        <input id="adminButtonColor" type="color" class="mb-2 w-full">
+        <button onclick="applyAdminColors()" class="bg-green-600 text-white px-4 py-2 rounded w-full">Aplicar</button>
       </div>
-    `;
-    container.appendChild(div);
-  });
-}
-function adminDeleteBar(idx){ if(!confirm('Excluir essa meta?')) return; bars.splice(idx,1); saveBars(); renderBars(); updateLeaderboard(); renderAdminBars(); showNotification('Meta excluída'); }
-function adminAdjustProgress(idx){ const p = prompt('Defina o progresso (0-100):', bars[idx].progress); if(p===null) return; const v = Number(p); if(isNaN(v) || v<0 || v>100) return alert('Valor inválido'); bars[idx].progress = v; saveBars(); renderBars(); updateLeaderboard(); renderAdminBars(); showNotification('Progresso ajustado'); }
 
-// ---------- Global message ----------
-function sendGlobalMessage(){
-  const msg = document.getElementById('globalMessageInput').value.trim();
-  if(!msg){ alert('Digite uma mensagem'); return; }
-  document.getElementById('globalMessageText').innerText = msg;
-  document.getElementById('globalMessageModal').classList.remove('hidden');
-  document.getElementById('globalMessageInput').value = '';
-}
-function closeGlobalMessage(){ document.getElementById('globalMessageModal').classList.add('hidden'); }
-
-// ---------- Bars / members ----------
-document.getElementById('addBarBtn').addEventListener('click', ()=> {
-  const name = document.getElementById('newBarName').value.trim();
-  if(!name){ alert('Digite o nome da meta'); return; }
-  const member = prompt('Digite seu nome para identificação:', 'Membro') || 'Membro';
-  bars.push({name, progress: 0, proofs: [], member});
-  saveBars();
-  document.getElementById('newBarName').value = '';
-  renderBars(); updateLeaderboard();
-  showNotification('Meta adicionada');
-});
-
-function renderBars(){
-  const container = document.getElementById('barsContainer');
-  container.innerHTML = '';
-  bars.forEach((bar, index) => {
-    const barEl = document.createElement('div');
-    barEl.className = 'bg-white rounded-lg shadow p-6';
-    barEl.innerHTML = `
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">${bar.name} <span class="text-sm text-gray-500">(${bar.member||'Membro'})</span></h3>
-        <div class="flex items-center gap-2">
-          <button onclick="editBarName(${index})" class="p-1 text-gray-500 hover:text-blue-500" title="Editar nome"><i data-feather="edit-2"></i></button>
-        </div>
+      <div class="mb-4">
+        <h3 class="font-bold">Gerar Credenciais</h3>
+        <button onclick="generateCredential()" class="bg-purple-600 text-white px-4 py-2 rounded w-full">Gerar</button>
+        <ul id="credentialsList" class="mt-2 space-y-1"></ul>
       </div>
-      <div class="flex items-center space-x-4 mb-2">
-        <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
-          <div class="progress-bar h-full rounded-full" style="width:${bar.progress}%; background-color:${barColor}"></div>
-        </div>
-        <span>${bar.progress}%</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <input type="file" id="progressPhoto-${index}" accept="image/*" class="hidden" onchange="handleFileUpload(${index}, this.files[0])">
-        <label for="progressPhoto-${index}" class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2">
-          <i data-feather="camera"></i> Provar Tarefa
-        </label>
-      </div>
-    `;
-    container.appendChild(barEl);
-  });
-  feather.replace();
-}
 
-function editBarName(index){
-  const newName = prompt('Novo nome da meta:', bars[index].name);
-  if(!newName) return;
-  bars[index].name = newName;
-  saveBars(); renderBars(); updateLeaderboard(); showNotification('Nome atualizado');
-}
+      <div class="mb-4">
+        <h3 class="font-bold">Usuários Online</h3>
+        <p id="onlineCount">0 membros online</p>
+      </div>
+    </div>
+  </div>
 
-function handleFileUpload(index, file){
-  if(!file) return;
+  <script>
+    feather.replace();
+
+    const goals = [];
+    let credentials = [];
+    let onlineCount = Math.floor(Math.random() * 20) + 1;
+
+    // Atualiza leaderboard
+    function updateLeaderboard() {
+      const leaderboard = document.getElementById("leaderboard");
+      leaderboard.innerHTML = "";
+      goals.sort((a,b)=>b.progress-a.progress);
+      goals.forEach((g) => {
+        const li = document.createElement("li");
+        li.textContent = `${g.member} - ${g.name}: ${g.progress}%`;
+        leaderboard.appendChild(li);
+      });
+    }
+
+    // Adiciona nova meta
+    function addGoal() {
+      const member = document.getElementById("memberName").value.trim();
+      const goal = document.getElementById("goalName").value.trim();
+      if(!member || !goal) return alert("Preencha seu nome e a meta!");
+      goals.push({member,name:goal,progress:0});
+      renderGoals();
+      updateLeaderboard();
+    }
+
+    // Renderiza metas
+    function renderGoals() {
+      const section = document.getElementById("goalsSection");
+      section.innerHTML = "";
+      goals.forEach((g,i)=>{
+        const div = document.createElement("div");
+        div.className = "bg-white p-4 rounded shadow";
+        div.innerHTML = `
+          <h3 class="font-bold mb-2">${g.member} - ${g.name}</h3>
+          <div class="w-full bg-gray-200 rounded h-6 mb-2">
+            <div class="h-6 bg-blue-600 rounded progress-bar" style="width:${g.progress}%"></div>
+          </div>
+          <p>${g.progress}%</p>
+          <div class="flex space-x-2 mt-2">
+            <button onclick="deleteGoal(${i})" class="bg-red-600 text-white px-2 py-1 rounded">Excluir</button>
+            <button onclick="increaseProgress(${i})" class="bg-green-600 text-white px-2 py-1 rounded">+10%</button>
+          </div>
+        `;
+        section.appendChild(div);
+      });
+    }
+
+    function increaseProgress(i){goals[i].progress=Math.min(100,goals[i].progress+10);renderGoals();updateLeaderboard();}
+    function deleteGoal(i){goals.splice(i,1);renderGoals();updateLeaderboard();}
+    function sendGlobalMessage(){const msg=document.getElementById("adminMessage").value;if(!msg)return;document.getElementById("globalMessageText").textContent=msg;document.getElementById("globalMessage").classList.remove("hidden");}
+    function closeGlobalMessage(){document.getElementById("globalMessage").classList.add("hidden");}
+
+    function toggleMemberSettings(){document.getElementById("memberSettings").classList.toggle("hidden");}
+    function saveMemberSettings(){
+      const siteColor=document.getElementById("memberSiteColor").value;
+      const barColor=document.getElementById("memberBarColor").value;
+      const bgFile=document.getElementById("memberBackground").files[0];
+      document.body.style.backgroundColor=siteColor;
+      document.querySelectorAll(".progress-bar").forEach(b=>b.style.background
