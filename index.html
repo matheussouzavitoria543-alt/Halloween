@@ -108,33 +108,32 @@
     let credentials = [];
     let onlineCount = Math.floor(Math.random() * 20) + 1;
 
-    // Atualiza leaderboard
+    // --- Funções principais ---
     function updateLeaderboard() {
       const leaderboard = document.getElementById("leaderboard");
       leaderboard.innerHTML = "";
-      goals.sort((a,b)=>b.progress-a.progress);
-      goals.forEach((g) => {
+      goals.sort((a, b) => b.progress - a.progress);
+      goals.forEach(g => {
         const li = document.createElement("li");
         li.textContent = `${g.member} - ${g.name}: ${g.progress}%`;
         leaderboard.appendChild(li);
       });
     }
 
-    // Adiciona nova meta
     function addGoal() {
-      const member = document.getElementById("memberName").value.trim();
-      const goal = document.getElementById("goalName").value.trim();
-      if(!member || !goal) return alert("Preencha seu nome e a meta!");
-      goals.push({member,name:goal,progress:0});
+      const memberName = document.getElementById("memberName").value;
+      const goalName = document.getElementById("goalName").value;
+      if (!memberName || !goalName) return alert("Preencha seu nome e a meta!");
+      const goal = { member: memberName, name: goalName, progress: 0 };
+      goals.push(goal);
       renderGoals();
       updateLeaderboard();
     }
 
-    // Renderiza metas
     function renderGoals() {
       const section = document.getElementById("goalsSection");
       section.innerHTML = "";
-      goals.forEach((g,i)=>{
+      goals.forEach((g, index) => {
         const div = document.createElement("div");
         div.className = "bg-white p-4 rounded shadow";
         div.innerHTML = `
@@ -143,24 +142,104 @@
             <div class="h-6 bg-blue-600 rounded progress-bar" style="width:${g.progress}%"></div>
           </div>
           <p>${g.progress}%</p>
+          <input type="file" accept="image/*" class="mt-2">
           <div class="flex space-x-2 mt-2">
-            <button onclick="deleteGoal(${i})" class="bg-red-600 text-white px-2 py-1 rounded">Excluir</button>
-            <button onclick="increaseProgress(${i})" class="bg-green-600 text-white px-2 py-1 rounded">+10%</button>
+            <button onclick="deleteGoal(${index})" class="bg-red-600 text-white px-2 py-1 rounded">Excluir</button>
+            <button onclick="increaseProgress(${index})" class="bg-green-600 text-white px-2 py-1 rounded">+10%</button>
           </div>
         `;
         section.appendChild(div);
       });
     }
 
-    function increaseProgress(i){goals[i].progress=Math.min(100,goals[i].progress+10);renderGoals();updateLeaderboard();}
-    function deleteGoal(i){goals.splice(i,1);renderGoals();updateLeaderboard();}
-    function sendGlobalMessage(){const msg=document.getElementById("adminMessage").value;if(!msg)return;document.getElementById("globalMessageText").textContent=msg;document.getElementById("globalMessage").classList.remove("hidden");}
-    function closeGlobalMessage(){document.getElementById("globalMessage").classList.add("hidden");}
+    function increaseProgress(index) {
+      goals[index].progress = Math.min(100, goals[index].progress + 10);
+      renderGoals();
+      updateLeaderboard();
+    }
 
-    function toggleMemberSettings(){document.getElementById("memberSettings").classList.toggle("hidden");}
-    function saveMemberSettings(){
-      const siteColor=document.getElementById("memberSiteColor").value;
-      const barColor=document.getElementById("memberBarColor").value;
-      const bgFile=document.getElementById("memberBackground").files[0];
-      document.body.style.backgroundColor=siteColor;
-      document.querySelectorAll(".progress-bar").forEach(b=>b.style.background
+    function deleteGoal(index) {
+      goals.splice(index, 1);
+      renderGoals();
+      updateLeaderboard();
+    }
+
+    function sendGlobalMessage() {
+      const msg = document.getElementById("adminMessage").value;
+      if (!msg) return;
+      document.getElementById("globalMessageText").textContent = msg;
+      document.getElementById("globalMessage").classList.remove("hidden");
+    }
+    function closeGlobalMessage() {
+      document.getElementById("globalMessage").classList.add("hidden");
+    }
+
+    function toggleMemberSettings() {
+      document.getElementById("memberSettings").classList.toggle("hidden");
+    }
+    function saveMemberSettings() {
+      const siteColor = document.getElementById("memberSiteColor").value;
+      const barColor = document.getElementById("memberBarColor").value;
+      const bgFile = document.getElementById("memberBackground").files[0];
+      document.body.style.backgroundColor = siteColor;
+      document.querySelectorAll(".progress-bar").forEach(b => b.style.backgroundColor = barColor);
+      if (bgFile) {
+        const reader = new FileReader();
+        reader.onload = e => document.body.style.backgroundImage = `url(${e.target.result})`;
+        reader.readAsDataURL(bgFile);
+      }
+      toggleMemberSettings();
+    }
+
+    function toggleAdminPanel() {
+      document.getElementById("adminPanel").classList.toggle("hidden");
+      document.getElementById("onlineCount").textContent = `${onlineCount} membros online`;
+    }
+
+    function applyAdminColors() {
+      const siteColor = document.getElementById("adminSiteColor").value;
+      const btnColor = document.getElementById("adminButtonColor").value;
+      document.body.style.backgroundColor = siteColor;
+      document.querySelectorAll("button").forEach(b => b.style.backgroundColor = btnColor);
+    }
+
+    function generateCredential() {
+      const cred = "admin-" + Math.random().toString(36).substr(2, 6);
+      credentials.push(cred);
+      const li = document.createElement("li");
+      li.textContent = cred;
+      document.getElementById("credentialsList").appendChild(li);
+    }
+
+    // --- LOGIN ADMIN ---
+    function loginAdmin() {
+      const user = document.getElementById('adminUsername').value.trim();
+      const pass = document.getElementById('adminPassword').value.trim();
+      if(!user || !pass){ alert('Preencha usuário e senha'); return; }
+
+      // Usuário padrão
+      if(user === 'admin' && pass === '123456'){
+        document.getElementById('adminBtn').classList.remove('hidden');
+        toggleAdminPanel();
+        alert('Login de administrador realizado!');
+        return;
+      }
+
+      // Verifica credenciais geradas
+      const found = credentials.find(c => c === `${user}-${pass}`);
+      if(found){
+        document.getElementById('adminBtn').classList.remove('hidden');
+        toggleAdminPanel();
+        alert('Login de administrador realizado!');
+      } else {
+        alert('Usuário ou senha incorretos.');
+      }
+    }
+
+    // --- Eventos ---
+    document.getElementById("addGoalBtn").addEventListener("click", addGoal);
+    document.getElementById("settingsBtn").addEventListener("click", toggleMemberSettings);
+    document.getElementById("adminBtn").addEventListener("click", toggleAdminPanel);
+  </script>
+</body>
+</html>
